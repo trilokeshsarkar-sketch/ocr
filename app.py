@@ -3,6 +3,9 @@ import pytesseract
 from PIL import Image
 import io
 import time
+import subprocess
+import sys
+import os
 
 # Set page configuration
 st.set_page_config(
@@ -12,8 +15,37 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Configure PyTesseract if Tesseract-OCR is not in system PATH
-# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe' 
+# Function to check if Tesseract is installed and install it if not
+def install_tesseract():
+    try:
+        # Check if Tesseract is already installed
+        subprocess.run(["tesseract", "--version"], check=True, capture_output=True)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        st.warning("Tesseract-OCR is not installed. Attempting to install...")
+        
+        try:
+            # Update package list and install Tesseract
+            subprocess.run(["sudo", "apt-get", "update"], check=True, capture_output=True)
+            subprocess.run(["sudo", "apt-get", "install", "-y", "tesseract-ocr"], check=True, capture_output=True)
+            st.success("Tesseract-OCR installed successfully!")
+            return True
+        except subprocess.CalledProcessError as e:
+            st.error(f"Failed to install Tesseract-OCR: {e}")
+            return False
+
+# Check and install Tesseract if needed
+if install_tesseract():
+    st.success("Tesseract-OCR is ready to use!")
+else:
+    st.error("""
+    **Tesseract-OCR installation failed!**
+    
+    Please install Tesseract-OCR manually on your system:
+    - **Windows**: Download from [GitHub](https://github.com/UB-Mannheim/tesseract/wiki)
+    - **Mac**: `brew install tesseract`
+    - **Linux**: `sudo apt-get install tesseract-ocr`
+    """)
 
 # Custom CSS for better styling
 st.markdown("""
@@ -142,8 +174,6 @@ if uploaded_file is not None:
                 - **Windows**: Download from [GitHub](https://github.com/UB-Mannheim/tesseract/wiki)
                 - **Mac**: `brew install tesseract`
                 - **Linux**: `sudo apt-get install tesseract-ocr`
-                
-                Or configure the path manually in the code.
                 """)
                 
             except Exception as e:
